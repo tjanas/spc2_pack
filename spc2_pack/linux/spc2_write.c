@@ -14,11 +14,11 @@ void *collection = NULL;
 void *coll_ptr = NULL;
 void *ext_tags = NULL;
 void *ext_tags_ptr = NULL;
-u8	hash_results[65536][20];
+u8 hash_results[65536][20];
 SHA1Context sha1;
-u32	spc_ext_tags_table[1024];
-u32	num_tag_blocks = 0;
-u32	num_blocks = 0;
+u32 spc_ext_tags_table[1024];
+u32 num_tag_blocks = 0;
+u32 num_blocks = 0;
 
 static u8 magic[] = {'K','S','P','C', 0x1a};
 

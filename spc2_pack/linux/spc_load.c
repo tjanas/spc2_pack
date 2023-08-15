@@ -93,7 +93,7 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 				s->tag_format = SPC_TAG_TEXT;
 
 			if ((it->fade_length_ms[4] == 0) && (isascii(it->song_artist[0]) && (it->song_artist[0] != 0)))
-				s->tag_format = SPC_TAG_TEXT;   //Conclusively text.
+				s->tag_format = SPC_TAG_TEXT; //Conclusively text.
 		}
 		else
 		{
@@ -111,7 +111,7 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 							s->tag_format = SPC_TAG_TEXT;
 					}
 					if ((it->fade_length_ms[4] == 0) && (isascii(it->song_artist[0]) && (it->song_artist[0] != 0)))
-						s->tag_format = SPC_TAG_TEXT;	//Conclusively text.
+						s->tag_format = SPC_TAG_TEXT; //Conclusively text.
 					if ((i == 3) || (j == 5))
 						s->tag_format = SPC_TAG_TEXT;
 				}
@@ -134,7 +134,7 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 			if((i==4 && j>0 && j<=2 && k>0 && k<=2) || (i>0 && i<=2 && j>0 && j<=2 && k==4))
 			{
 
-				if(i==4)	//YYYY.MM.DD format.
+				if(i==4) //YYYY.MM.DD format.
 				{
 					for(l=0,y=0;l<i;l++)
 					{
@@ -190,7 +190,7 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 							(((y % 100) % 10) << 0);
 			}
 			else
-				s->date = 0;	//Impossible or zero.
+				s->date = 0; //Impossible or zero.
 
 			// impossible, or zero
 			if(s->date > 0x99999999) s->date = 0;
