@@ -28,6 +28,9 @@ int spc2_start()
 	num_blocks = 0;
 	num_tag_blocks = 0;
 
+    memset(&hash_results, 0, sizeof(hash_results));
+    memset(&spc_ext_tags_table, 0, sizeof(spc_ext_tags_table));
+
 	// eat 1mb memory.
 	heap = heap_ptr = malloc(64 * 1024 * 1024);
 	// nom nom
@@ -43,7 +46,7 @@ int spc2_start()
 
 int spc2_finish(int *final_size, char *filename, u16 num_spc)
 {
-	int i;
+	int i=0;
 
 	if(!heap || !collection || !ext_tags) return -1;
 
@@ -99,6 +102,7 @@ int spc2_write_header(u16 num_spc)
 int spc2_write_metadata(char *filename, spc2_metadata *o, spc_struct *s, spc_idx6_table *t)
 {
 	u8 temp_tag_block[3000];
+    memset(&temp_tag_block, 0, sizeof(temp_tag_block));
 	u32 temp_tag_length=0;
 	u32 i;
 	memcpy(&o->dsp_regs, &s->ram_dumps.dsp_regs, 128);
@@ -106,13 +110,13 @@ int spc2_write_metadata(char *filename, spc2_metadata *o, spc_struct *s, spc_idx
 	memcpy(&o->cpu_pcl, &s->cpu_regs.cpu_pcl, 7); // as long as the struct isn't reordered, this works
 	memcpy(&o->date, &s->date, 4);
 	if(t->intro_len)
-		memcpy(&o->song_length_16th, &t->intro_len, 4);
+		o->song_length_16th = t->intro_len;
 	else
-		memcpy(&o->song_length_16th, &s->song_length, 4);
+		o->song_length_16th = s->song_length;
 	if(t->fade_len)
-		memcpy(&o->fade_length_16th, &t->fade_len, 4);
+		o->fade_length_16th = t->fade_len;
 	else
-		memcpy(&o->fade_length_16th, &s->fade_length, 4);
+		o->fade_length_16th = s->fade_length;
 
 	memcpy(&o->year_binary, &t->copyright, 2);
 	memcpy(&o->ost_disk, &t->ost_disc, 1);

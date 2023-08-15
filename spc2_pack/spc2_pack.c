@@ -31,7 +31,11 @@ int main(int argc, char* argv[])
 	u16 song_count = 0;
 	int prev_size = 0;
 	int final_size;
-	int i, j, k, l;
+	int i = 0, k = 0, l = 0;
+
+	memset(&files, 0, sizeof(files));
+	memset(&filelen, 0, sizeof(filelen));
+	memset(&sp2filename, 0, sizeof(sp2filename));
 
 	printf("\n spc2_pack 0.4\n-------------------------------------------\n");
 
