@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
 	printf(" Packs multiple Super Nintendo SPC sound\n");
 	printf(" files to a single SPC2 \n\n");
 	printf(" SPC2 format by kevtris, packer by marshallh\n");
-	printf(" mods to packer by CaitSith2\n\n");
+	printf(" mods to packer by CaitSith2 and tjanas\n\n");
 	if (argc < 2)
 	{
 		printf(" Error : No directory specified\n");
