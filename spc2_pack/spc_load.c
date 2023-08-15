@@ -38,15 +38,17 @@ int spc_load(char *filename, spc_struct *s, spc_idx6_table *t)
 {
 	FILE			*fp;
 	u8				buf[8];
+	memset(&buf, 0, sizeof(buf));
 	u32 offset;
 	spc_header		*h =& s->header;
 	spc_id666_text	*it = &s->tag_text;
 	spc_id666_bin	*ib = &s->tag_binary;
 	
 	spc_idx6_header	idx6h;
+	memset(&idx6h, 0, sizeof(idx6h));
 	spc_idx6_sub_header *idx6sh;
 
-	int i, j, k, l,m,d,y;
+	int i=0, j=0, k=0, l=0, m=0, d=0, y=0;
 
 	fp = fopen(filename, "rb");
 	if(fp == NULL){
@@ -88,6 +90,12 @@ int spc_load(char *filename, spc_struct *s, spc_idx6_table *t)
 		{
 			if (it->channel_disable == 1 && it->emulator == 0)
 				s->tag_format = SPC_TAG_BINARY;	
+
+			if (ib->reserved[0] >= '0' && ib->reserved[0] <= '2')
+				s->tag_format = SPC_TAG_TEXT;
+
+			if ((it->fade_length_ms[4] == 0) && (isascii(it->song_artist[0]) && (it->song_artist[0] != 0)))
+				s->tag_format = SPC_TAG_TEXT; //Conclusively text.
 		}
 		else
 		{
@@ -104,16 +112,16 @@ int spc_load(char *filename, spc_struct *s, spc_idx6_table *t)
 						else
 							s->tag_format = SPC_TAG_TEXT;
 					}
-					else
-					{
-						if((it->fade_length_ms[4] == 0) && (isascii(it->song_artist[0]) && (it->song_artist[0] != 0)))
-							s->tag_format = SPC_TAG_TEXT;	//Conclusively text.
-						if((i == 3) || (j == 5))
-							s->tag_format = SPC_TAG_TEXT;
-					}
+					if((it->fade_length_ms[4] == 0) && (isascii(it->song_artist[0]) && (it->song_artist[0] != 0)))
+						s->tag_format = SPC_TAG_TEXT;	//Conclusively text.
+					if((i == 3) || (j == 5))
+						s->tag_format = SPC_TAG_TEXT;
 				}
 			}
 		}
+
+		if(s->tag_format == SPC_TAG_PREFER_BINARY && ib->reserved[0] >= '0' && ib->reserved[0] <= '2')
+			s->tag_format = SPC_TAG_TEXT;
 
 		if(s->tag_format == SPC_TAG_PREFER_BINARY)
 			s->tag_format = SPC_TAG_BINARY;
@@ -223,7 +231,8 @@ int spc_load(char *filename, spc_struct *s, spc_idx6_table *t)
 
 			//printf("date: %08x\n", s->date);
 
-			memcpy(&s->song_length, &ib->song_length_secs, 4);
+			s->song_length = 0;
+			memcpy(&s->song_length, &ib->song_length_secs, 3);
 			s->song_length &= 0x00FFFFFF;
 			s->song_length *= 64000;
 			memcpy(&s->fade_length, &ib->fade_length_ms, 4);
