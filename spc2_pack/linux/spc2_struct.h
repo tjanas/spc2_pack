@@ -2,6 +2,8 @@
 
 #include "types.h"
 
+// http://blog.kevtris.org/blogfiles/spc2_file_specification_v1.txt
+
 #pragma pack(push)
 #pragma pack(1)
 struct spc2_header
@@ -13,6 +15,7 @@ struct spc2_header
 	u16	spc_count;
 	u8	reserved[7];
 };
+
 struct spc2_metadata
 {
 	u16	block_offset[256];
@@ -45,10 +48,12 @@ struct spc2_metadata
 	u8	spc_filename[28];
 	u32	ptr_extended;
 };
+
 struct spc2_chunk
 {
 	u8 type;
 	u8 length;
 	u8 data[255];
 };
+
 #pragma pack(pop)

@@ -3,9 +3,6 @@
 // marshallh
 // 1/18/2012
 //
-// Modified for compiling on Linux with c++
-// tjanas
-// 8/14/2023
 
 #include <algorithm>
 #include <cstdio>
@@ -25,90 +22,94 @@
 #include "spc2_struct.h"
 #include "spc2_write.h"
 
-spc_struct spc;
-spc_idx6_table idx6;
-spc2_header sh;
-spc2_metadata sm;
+spc_struct spc;  // zero-initialized by spc_load
+spc_idx6_table idx6; // zero-initialized by spc_load
 
 // Helper function to obtain .spc filenames within a directory
 std::vector< std::string > glob(const std::string& pattern)
 {
-	// If a directory name contains square brackets, they have to be escaped
-	// with backslashes for glob pattern matching.
-	std::string escaped_pattern = pattern;
-	for (std::size_t pos = 0; ; pos += 2)
-	{
-		pos = escaped_pattern.find("[", pos);
-		if (pos == std::string::npos)
-			break;
-		escaped_pattern.insert(pos, "\\");
-	}
-	for (std::size_t pos = 0; ; pos += 2)
-	{
-		pos = escaped_pattern.find("]", pos);
-		if (pos == std::string::npos)
-			break;
-		escaped_pattern.insert(pos, "\\");
-	}
+    // If a directory name contains square brackets, they have to be escaped
+    // with backslashes for glob pattern matching.
+    std::string escaped_pattern = pattern;
+    for (std::size_t pos = 0; ; pos += 2)
+    {
+        pos = escaped_pattern.find("[", pos);
+        if (pos == std::string::npos)
+            break;
+        escaped_pattern.insert(pos, "\\");
+    }
+    for (std::size_t pos = 0; ; pos += 2)
+    {
+        pos = escaped_pattern.find("]", pos);
+        if (pos == std::string::npos)
+            break;
+        escaped_pattern.insert(pos, "\\");
+    }
 
-	glob_t glob_result;
-	memset(&glob_result, 0, sizeof(glob_result));
+    glob_t glob_result;
+    memset(&glob_result, 0, sizeof(glob_result));
 
-	std::vector< std::string > filenames;
+    std::vector< std::string > filenames;
 
-	// do the glob operation
-	int glob_rc = glob(escaped_pattern.c_str(), GLOB_TILDE, NULL, &glob_result);
-	if (glob_rc == 0)
-	{
-		// Collect all the filenames.
-		// Case-insensitive sort (to match Microsoft Windows) by creating
-		// a map where keys are the uppercased filename, with the values
-		// being the unmodified filename.
-		filenames.reserve(glob_result.gl_pathc);
-		std::map< std::string, std::string > filenames_no_case_sort;
-		for (std::size_t i = 0; i < glob_result.gl_pathc; ++i)
-		{
-			std::string value(glob_result.gl_pathv[i]);
-			std::string key = value;
-			std::transform(key.begin(), key.end(), key.begin(), ::toupper);
+    // do the glob operation
+    int glob_rc = glob(escaped_pattern.c_str(), GLOB_TILDE, NULL, &glob_result);
+    if (glob_rc == 0)
+    {
+        // Collect all the filenames.
+        // Case-insensitive sort (to match Microsoft Windows) by creating
+        // a map where keys are the uppercased filename, with the values
+        // being the unmodified filename.
+        filenames.reserve(glob_result.gl_pathc);
+        std::map< std::string, std::string > filenames_no_case_sort;
+        for (std::size_t i = 0; i < glob_result.gl_pathc; ++i)
+        {
+            std::string value(glob_result.gl_pathv[i]);
+            std::string key = value;
+            std::transform(key.begin(), key.end(), key.begin(), ::toupper);
 
-			auto it = filenames_no_case_sort.insert(std::make_pair(key, value));
-			if (!it.second) // insert failed; key already exists
-			{   // Example: warn if both "Filename.spc" and "FileName.spc" exist
-				std::cout << "Ignoring file[" << value << "] since it conflicts with [" << it.first->second << "]" << std::endl;
-			}
-		}
-		for (const auto& x : filenames_no_case_sort)
-		{   // now sorted, case-insensitive
-			filenames.emplace_back(std::move(x.second));
-		}
-	}
+            //filenames_no_case_sort[key] = value;
 
-	// cleanup
-	globfree(&glob_result);
+            auto it = filenames_no_case_sort.insert(std::make_pair(key, value));
+            if (!it.second) // insert failed; key already exists
+            {   // Example: warn if both "Filename.spc" and "FileName.spc" exist
+                std::cout << "Ignoring file[" << value << "] since it conflicts with [" << it.first->second << "]" << std::endl;
+            }
+        }
+        for (const auto& x : filenames_no_case_sort)
+        {   // now sorted, case-insensitive
+            filenames.emplace_back(std::move(x.second));
+        }
+    }
 
-	// done
-	return filenames;
+    // cleanup
+    globfree(&glob_result);
+
+    // done
+    return filenames;
 }
 std::string getFileName(const std::string& input)
 {
-	std::string output;
-	auto pos = input.rfind('/',input.length());
-	if (pos != std::string::npos)
-		output = input.substr(pos+1, input.length() - pos);
-	return output;
+    std::string output;
+    auto pos = input.rfind('/',input.length());
+    if (pos != std::string::npos)
+        output = input.substr(pos+1, input.length() - pos);
+    return output;
 }
 
 int main(int argc, char* argv[])
 {
-	static char files[65535][260] = {0};
-	static u32 filelen[65535] = {0};
-	char sp2filename[260] = {0};
+	static char files[65535][260];
+	static u32 filelen[65535];
+	char sp2filename[260];
 	u16 file_count = 0;
 	u16 song_count = 0;
 	int prev_size = 0;
 	int final_size = 0;
-	int i = 0, j = 0, k = 0, l = 0;
+	int i = 0, k = 0, l = 0;
+
+	memset(&files, 0, sizeof(files));
+	memset(&filelen, 0, sizeof(filelen));
+	memset(&sp2filename, 0, sizeof(sp2filename));
 
 	printf("\n spc2_pack 0.4\n-------------------------------------------\n");
 
@@ -117,7 +118,7 @@ int main(int argc, char* argv[])
 	printf(" SPC2 format by kevtris, packer by marshallh\n");
 	printf(" mods to packer by CaitSith2\n\n");
 	if (argc < 2)
-	{
+        {
 		printf(" Error : No directory specified\n");
 		printf(" Try \"spc2_pack . output.sp2\" to compress everything\n");
 		printf(" in the current folder\n\n");
@@ -125,7 +126,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 	else if (argc < 3)
-	{
+        {
 		k = 1;
 		l = argc;
 		goto StartLoop;

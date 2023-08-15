@@ -1,6 +1,8 @@
 #pragma once
 #include "types.h"
 
+// http://vspcplay.raphnet.net/spc_file_format.txt
+
 #pragma pack(push)
 #pragma pack(1)
 
@@ -106,10 +108,10 @@ struct spc_idx6_sub_header
 
 struct spc_struct
 {
-	spc_header		header;		// 37 bytes
+	spc_header	header;		// 37 bytes
 	spc_cpu_regs	cpu_regs;	// 9 bytes
-	union { 
-		spc_id666_text	tag_text; 
+	union {
+		spc_id666_text	tag_text;
 		spc_id666_bin	tag_binary;
 	}; // 210 bytes
 	// 256 bytes so far
@@ -118,10 +120,10 @@ struct spc_struct
 
 	spc_idx6_table	extended;
 
-	// the following variables aren't part of the file, 
+	// the following variables aren't part of the file,
 	// but are helpful in storing information about it
 	u8				tag_format;
-	u32				date;	// normalized for SPC2		
+	u32				date;	// normalized for SPC2
 	u32				song_length;
 	u32				fade_length;
 };
@@ -133,23 +135,23 @@ struct spc_struct
 #define SPC_TAG_PREFER_BINARY 3
 
 enum {
-	IDX6_SONGNAME = 0x1,
-	IDX6_GAMENAME,
-	IDX6_ARTISTNAME,
-	IDX6_DUMPERNAME,
-	IDX6_DATEDUMPED,
-	IDX6_EMULATOR,
-	IDX6_COMMENTS,
+	IDX6_SONGNAME = 0x01,
+	IDX6_GAMENAME = 0x02,
+	IDX6_ARTISTNAME = 0x03,
+	IDX6_DUMPERNAME = 0x04,
+	IDX6_DATEDUMPED = 0x05,
+	IDX6_EMULATOR = 0x06,
+	IDX6_COMMENTS = 0x07,
 	IDX6_OSTTITLE = 0x10,
-	IDX6_OSTDISC,
-	IDX6_OSTTRACK,
-	IDX6_PUBNAME,
-	IDX6_COPYRIGHT,
+	IDX6_OSTDISC = 0x11,
+	IDX6_OSTTRACK = 0x12,
+	IDX6_PUBNAME = 0x13,
+	IDX6_COPYRIGHT = 0x14,
 	IDX6_INTROLEN = 0x30,
-	IDX6_LOOPLEN,
-	IDX6_ENDLEN,
-	IDX6_FADELEN,
-	IDX6_MUTECHAN,
-	IDX6_LOOPNUM,
-	IDX6_AMPVAL
+	IDX6_LOOPLEN = 0x31,
+	IDX6_ENDLEN = 0x32,
+	IDX6_FADELEN = 0x33,
+	IDX6_MUTECHAN = 0x34,
+	IDX6_LOOPNUM = 0x35,
+	IDX6_AMPVAL = 0x36
 };

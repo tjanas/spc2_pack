@@ -1,25 +1,24 @@
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include "types.h"
 #include "spc_struct.h"
 #include "spc2_struct.h"
 #include "spc2_write.h"
 #include "sha1.h"
 
-FILE	*fp;
-void	*heap = NULL;
-void	*heap_ptr;
-void	*collection = NULL;
-void	*coll_ptr;
-void	*ext_tags = NULL;
-void	*ext_tags_ptr;
-u8		hash_results[65536][20];
+FILE *fp = NULL;
+void *heap = NULL;
+void *heap_ptr = NULL;
+void *collection = NULL;
+void *coll_ptr = NULL;
+void *ext_tags = NULL;
+void *ext_tags_ptr = NULL;
+u8	hash_results[65536][20];
 SHA1Context sha1;
-u32		spc_ext_tags_table[1024];
-u32		num_tag_blocks;
-u32		num_blocks;
+u32	spc_ext_tags_table[1024];
+u32	num_tag_blocks = 0;
+u32	num_blocks = 0;
 
 static u8 magic[] = {'K','S','P','C', 0x1a};
 
@@ -27,6 +26,9 @@ int spc2_start()
 {
 	num_blocks = 0;
 	num_tag_blocks = 0;
+
+	memset(&hash_results, 0, sizeof(hash_results));
+	memset(&spc_ext_tags_table, 0, sizeof(spc_ext_tags_table));
 
 	// eat 1mb memory.
 	heap = heap_ptr = malloc(64 * 1024 * 1024);
@@ -43,7 +45,7 @@ int spc2_start()
 
 int spc2_finish(int* final_size, const char* filename, u16 num_spc)
 {
-	int i;
+	int i=0;
 
 	if(!heap || !collection || !ext_tags) return -1;
 
@@ -73,9 +75,9 @@ int spc2_finish(int* final_size, const char* filename, u16 num_spc)
 	*final_size = (u8*)heap_ptr-(u8*)heap + (u8*)coll_ptr-(u8*)collection + (u8*)ext_tags_ptr-(u8*)ext_tags + 16;
 
 	fclose(fp);
-	if(heap) 
+	if(heap)
 		free(heap);
-	if(collection) 
+	if(collection)
 		free(collection);
 	if(ext_tags)
 		free(ext_tags);
@@ -86,7 +88,7 @@ int spc2_finish(int* final_size, const char* filename, u16 num_spc)
 int spc2_write_header(u16 num_spc)
 {
 	spc2_header h;
-	
+
 	memset(&h, 0, sizeof(spc2_header));
 	memcpy(&h.magic, magic, 5);
 	h.rev_major = 1;
@@ -99,6 +101,7 @@ int spc2_write_header(u16 num_spc)
 int spc2_write_metadata(char *filename, spc2_metadata *o, spc_struct *s, spc_idx6_table *t)
 {
 	u8 temp_tag_block[3000];
+	memset(&temp_tag_block, 0, sizeof(temp_tag_block));
 	u32 temp_tag_length=0;
 	u32 i=0;
 	memcpy(&o->dsp_regs, &s->ram_dumps.dsp_regs, 128);
@@ -106,20 +109,19 @@ int spc2_write_metadata(char *filename, spc2_metadata *o, spc_struct *s, spc_idx
 	memcpy(&o->cpu_pcl, &s->cpu_regs.cpu_pcl, 7); // as long as the struct isn't reordered, this works
 	memcpy(&o->date, &s->date, 4);
 	if(t->intro_len)
-		memcpy(&o->song_length_16th, &t->intro_len, 4);
+		o->song_length_16th = t->intro_len;
 	else
-		memcpy(&o->song_length_16th, &s->song_length, 4);
+		o->song_length_16th = s->song_length;
 	if(t->fade_len)
-		memcpy(&o->fade_length_16th, &t->fade_len, 4);
+		o->fade_length_16th = t->fade_len;
 	else
-		memcpy(&o->fade_length_16th, &s->fade_length, 4);
+		o->fade_length_16th = s->fade_length;
 
 	memcpy(&o->year_binary, &t->copyright, 2);
 	memcpy(&o->ost_disk, &t->ost_disc, 1);
 	memcpy(&o->ost_track, &t->ost_track, 2);
-	
 
-	for(i=0;i<4;i++)
+	for(i=0;i<4;++i)
 		filename[strlen(filename)-1]=0;	//Chop off the .spc extension.
 	memcpy(&o->spc_filename,filename,28);
 
@@ -178,7 +180,7 @@ int spc2_write_metadata(char *filename, spc2_metadata *o, spc_struct *s, spc_idx
 		memcpy(&temp_tag_block[temp_tag_length], &t->song_artist[32],strlen( (const char*)(&t->song_artist[32]) ));
 		temp_tag_length+=strlen( (const char*)(&t->song_artist[32]) );
 	}
-	if(t->dumper_name[32])	
+	if(t->dumper_name[32])
 	{
 		//Original spec for dumper in main tag was 16 bytes. SP2 spec is 32 bytes.
 		temp_tag_block[temp_tag_length++]=4;
@@ -215,7 +217,7 @@ int spc2_write_metadata(char *filename, spc2_metadata *o, spc_struct *s, spc_idx
 		memcpy(&temp_tag_block[temp_tag_length], &filename[28],strlen(&filename[28]));
 		temp_tag_length+=strlen(&filename[28]);
 	}
-	
+
 	if(temp_tag_length)
 	{
 		//Define end of extended tag if there is one.
@@ -256,8 +258,8 @@ SkipAddTag:
 
 int spc2_write_spc(char *filename, spc_struct *s, spc_idx6_table *t)
 {
-	int i;
-	int b;
+	int i = 0;
+	int b = 0;
 	int added=0;
 
 	spc2_metadata m;
@@ -297,6 +299,6 @@ skip_add:
 		i = 0;
 	}
 	spc2_write_metadata(filename, &m, s, t);
-	
+
 	return 0;
 }
