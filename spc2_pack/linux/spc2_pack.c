@@ -1,7 +1,7 @@
 //
-// spc2_pack 0.2
-// marshallh
-// 1/18/2012
+// spc2_pack 0.5
+// marshallh, CaitSith2, tjanas
+// 2023-08-15
 //
 
 #include <algorithm>
@@ -69,7 +69,7 @@ std::vector< std::string > glob(const std::string& pattern)
 
 			auto it = filenames_no_case_sort.insert(std::make_pair(key, value));
 			if (!it.second) // insert failed; key already exists
-			{   // Example: warn if both "Filename.spc" and "FileName.spc" exist
+			{	// Example: warn if both "Filename.spc" and "FileName.spc" exist
 				std::cout << "Ignoring file[" << value << "] since it conflicts with [" << it.first->second << "]" << std::endl;
 			}
 		}
@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
 	memset(&filelen, 0, sizeof(filelen));
 	memset(&sp2filename, 0, sizeof(sp2filename));
 
-	printf("\n spc2_pack 0.4\n-------------------------------------------\n");
+	printf("\n spc2_pack 0.5 (2023-08-15)\n-------------------------------------------\n");
 
 	printf(" Packs multiple Super Nintendo SPC sound\n");
 	printf(" files to a single SPC2 \n\n");
