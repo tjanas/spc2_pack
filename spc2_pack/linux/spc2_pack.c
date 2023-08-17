@@ -1,7 +1,7 @@
 //
-// spc2_pack 0.5
+// spc2_pack 0.51
 // marshallh, CaitSith2, tjanas
-// 2023-08-15
+// 2023-08-17
 //
 
 #include <algorithm>
@@ -9,20 +9,23 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-#include <glob.h>
 #include <map>
 #include <sstream>
 #include <string>
 #include <stdexcept>
 #include <vector>
+
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <glob.h>
+#endif
+
 #include "types.h"
 #include "spc_struct.h"
 #include "spc_load.h"
 #include "spc2_struct.h"
 #include "spc2_write.h"
-
-spc_struct spc;  // zero-initialized by spc_load
-spc_idx6_table idx6; // zero-initialized by spc_load
 
 struct spc_file_info
 {
@@ -30,6 +33,12 @@ struct spc_file_info
 	uint32_t filelen;
 };
 
+#ifdef _WIN32
+int spc_file_info_compare(const void* v0, const void* v1)
+{
+	return strcmp( ((spc_file_info*)v0)->filename, ((spc_file_info*)v1)->filename );
+}
+#else
 // Helper function to obtain .spc filenames within a directory
 std::vector< std::string > glob(const std::string& pattern)
 {
@@ -90,6 +99,7 @@ std::vector< std::string > glob(const std::string& pattern)
 	// done
 	return filenames;
 }
+
 std::string getFileName(const std::string& input)
 {
 	std::string output;
@@ -98,9 +108,12 @@ std::string getFileName(const std::string& input)
 		output = input.substr(pos+1, input.length() - pos);
 	return output;
 }
+#endif
 
 int main(int argc, char* argv[])
 {
+	spc_struct spc;  // zero-initialized by spc_load
+	spc_idx6_table idx6; // zero-initialized by spc_load
 	spc_file_info* files = (spc_file_info*) calloc(65535, sizeof(spc_file_info));
 	if (NULL == files)
 	{
@@ -117,7 +130,7 @@ int main(int argc, char* argv[])
 
 	memset(&sp2filename, 0, sizeof(sp2filename));
 
-	printf("\n spc2_pack 0.5 (2023-08-15)\n-------------------------------------------\n");
+	printf("\n spc2_pack 0.51 (2023-08-17)\n-------------------------------------------\n");
 
 	printf(" Packs multiple Super Nintendo SPC sound\n");
 	printf(" files to a single SPC2 \n\n");
@@ -170,6 +183,28 @@ int main(int argc, char* argv[])
 	std::string path = argv[k];
 	path += "/*.spc";
 
+
+#ifdef _WIN32
+	// use win32 directory API. not posix
+	struct _finddata_t spc_file;
+	intptr_t dir;
+	if( (dir = _findfirst( path.c_str(), &spc_file )) == -1L ) {
+		printf( "No *.spc files in current directory!\n" );
+		free(files);
+		return -1;
+	}else{
+		do{
+			strncpy(files[file_count].filename, spc_file.name, 256);
+			prev_size += spc_file.size;
+			files[file_count].filelen = spc_file.size;
+			++file_count;
+		} while( _findnext( dir, &spc_file ) == 0 );
+	}
+	_findclose(dir);
+
+	// sort files
+	qsort(files, file_count, sizeof(files[0]), spc_file_info_compare);
+#else
 	std::vector< std::string > filenames = glob(path);
 	if (filenames.empty())
 	{
@@ -201,6 +236,7 @@ int main(int argc, char* argv[])
 			++file_count;
 		}
 	}
+#endif
 
 	// compress everything
 	if (spc2_start())
