@@ -5,7 +5,7 @@
 #include "spc_struct.hpp"
 #include "spc2_struct.hpp"
 #include "spc2_write.hpp"
-#include "sha1.h"
+#include "sha1.hpp"
 
 FILE *fp = NULL;
 void *heap = NULL;
