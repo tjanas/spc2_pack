@@ -16,8 +16,8 @@ spc2_write.o: spc2_write.cpp spc2_write.hpp
 spc_load.o: spc_load.cpp spc_load.hpp
 	$(CXX) $(CXXFLAGS) -c spc_load.cpp
 
-sha1.o: sha1.c sha1.h
-	$(CXX) $(CXXFLAGS) -c sha1.c
+sha1.o: sha1.cpp sha1.hpp
+	$(CXX) $(CXXFLAGS) -c sha1.cpp
 
 clean:
 	rm -fv *.o spc2_pack
