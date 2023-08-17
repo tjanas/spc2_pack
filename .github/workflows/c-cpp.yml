@@ -14,9 +14,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: configure
-      run: cd spc2_pack
+      run: echo ./configure
     - name: make
-      run: make
+      run: cd spc2_pack; make
     - name: make check
       run: echo make check
     - name: make distcheck
