@@ -10,7 +10,6 @@
 #include <cstring>
 #include <fstream>
 #include <glob.h>
-#include <iostream>
 #include <map>
 #include <sstream>
 #include <string>
@@ -24,6 +23,12 @@
 
 spc_struct spc;  // zero-initialized by spc_load
 spc_idx6_table idx6; // zero-initialized by spc_load
+
+struct spc_file_info
+{
+	char filename[260];
+	uint32_t filelen;
+};
 
 // Helper function to obtain .spc filenames within a directory
 std::vector< std::string > glob(const std::string& pattern)
@@ -52,7 +57,7 @@ std::vector< std::string > glob(const std::string& pattern)
 	std::vector< std::string > filenames;
 
 	// do the glob operation
-	int glob_rc = glob(escaped_pattern.c_str(), GLOB_TILDE, NULL, &glob_result);
+	int glob_rc = glob(escaped_pattern.c_str(), GLOB_ERR, NULL, &glob_result);
 	if (glob_rc == 0)
 	{
 		// Collect all the filenames.
@@ -70,10 +75,10 @@ std::vector< std::string > glob(const std::string& pattern)
 			auto it = filenames_no_case_sort.insert(std::make_pair(key, value));
 			if (!it.second) // insert failed; key already exists
 			{	// Example: warn if both "Filename.spc" and "FileName.spc" exist
-				std::cout << "Ignoring file[" << value << "] since it conflicts with [" << it.first->second << "]" << std::endl;
+				printf("Ignoring file[%s] since it conflicts with [%s]\n", value.c_str(), it.first->second.c_str());
 			}
 		}
-		for (const auto& x : filenames_no_case_sort)
+		for (auto& x : filenames_no_case_sort)
 		{   // now sorted, case-insensitive
 			filenames.emplace_back(std::move(x.second));
 		}
@@ -96,8 +101,13 @@ std::string getFileName(const std::string& input)
 
 int main(int argc, char* argv[])
 {
-	static char files[65535][260];
-	static u32 filelen[65535];
+	spc_file_info* files = (spc_file_info*) calloc(65535, sizeof(spc_file_info));
+	if (NULL == files)
+	{
+		printf("Error: calloc\n");
+		return -1;
+	}
+
 	char sp2filename[260];
 	u16 file_count = 0;
 	u16 song_count = 0;
@@ -105,8 +115,6 @@ int main(int argc, char* argv[])
 	int final_size = 0;
 	int i = 0, k = 0, l = 0;
 
-	memset(&files, 0, sizeof(files));
-	memset(&filelen, 0, sizeof(filelen));
 	memset(&sp2filename, 0, sizeof(sp2filename));
 
 	printf("\n spc2_pack 0.5 (2023-08-15)\n-------------------------------------------\n");
@@ -121,6 +129,7 @@ int main(int argc, char* argv[])
 		printf(" Try \"spc2_pack . output.sp2\" to compress everything\n");
 		printf(" in the current folder\n\n");
 		printf(" Also try dragging a directory on top of the program\n\n");
+		free(files);
 		return -1;
 	}
 	else if (argc < 3)
@@ -165,6 +174,7 @@ int main(int argc, char* argv[])
 	if (filenames.empty())
 	{
 		printf( "No *.spc files in current directory!\n" );
+		free(files);
 		return -1;
 	}
 	else
@@ -176,6 +186,7 @@ int main(int argc, char* argv[])
 			if (!ifs.is_open())
 			{
 				printf( "Could not open %s\n", spc_file.c_str() );
+				free(files);
 				return -2;
 			}
 			const auto pos_start = ifs.tellg();
@@ -184,9 +195,9 @@ int main(int argc, char* argv[])
 			const auto spc_file_size = pos_end - pos_start;
 
 			std::string name = getFileName(spc_file);
-			strncpy((char*)&files[file_count], name.c_str(), 256);
+			strncpy(files[file_count].filename, name.c_str(), 256);
 			prev_size += spc_file_size;
-			filelen[file_count] = spc_file_size;
+			files[file_count].filelen = spc_file_size;
 			++file_count;
 		}
 	}
@@ -195,21 +206,22 @@ int main(int argc, char* argv[])
 	if (spc2_start())
 	{
 		printf("Couldn't allocate memory for SPC2 packing\n");
+		free(files);
 		return -1;
 	}
 	for (i = 0; i < file_count; ++i)
 	{
-		printf(" - %s", files[i]);
+		printf(" - %s", files[i].filename);
 		path = argv[k];
 		path += '/';
-		path += files[i];
+		path += files[i].filename;
 		if(spc_load(path.c_str(), &spc, &idx6))
 		{
 			printf(" - Not a valid spc file\n");
-			prev_size -= filelen[i];
+			prev_size -= files[i].filelen;
 			continue;
 		}
-		if(!spc2_write_spc(files[i], &spc, &idx6))
+		if(!spc2_write_spc(files[i].filename, &spc, &idx6))
 		{
 			printf("\n");
 			++song_count;
@@ -217,7 +229,7 @@ int main(int argc, char* argv[])
 		else
 		{
 			printf(" - Couldn't fit it into the collection\n");
-			prev_size -= filelen[i];
+			prev_size -= files[i].filelen;
 		}
 	}
 	spc2_finish(&final_size, sp2filename, song_count);
@@ -230,6 +242,7 @@ int main(int argc, char* argv[])
 	if (++k<l)
 		goto StartLoop;
 
+	free(files);
 	return 0;
 }
 
