@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -O3 -Wall -Wextra -Wpedantic
+CXXFLAGS = -O3 -Wall -Wextra -Wpedantic -std=c++14
 objects = spc2_pack.o spc2_write.o spc_load.o sha1.o
 
 all: spc2_pack
