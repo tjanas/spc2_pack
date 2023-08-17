@@ -1,13 +1,13 @@
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cctype>
+#include <cstring>
+#include <type_traits>
 #include "types.h"
 #include "spc_struct.h"
 #include "spc_load.h"
 
-int IsNumeric(char *str, u32 length)
+int IsNumeric(const char* str, u32 length)
 {
 	u32 c = 0;
 	while (c<length && isdigit(str[c])) c++;
@@ -17,14 +17,14 @@ int IsNumeric(char *str, u32 length)
 		return -1;
 }
 
-int CountNumbers(char *str, u32 length)
+int CountNumbers(const char* str, u32 length)
 {
 	u32 c = 0;
 	while (c<length && isdigit(str[c])) c++;
 	return c;
 }
 
-int IsDate(char *str, u32 length)
+int IsDate(const char* str, u32 length)
 {
 	u32 c = 0;
 	while (c<length && (isdigit(str[c]) || str[c]=='/' || str[c]=='-')) c++;
@@ -34,23 +34,20 @@ int IsDate(char *str, u32 length)
 		return -1;
 }
 
-int spc_load(char *filename, spc_struct *s, spc_idx6_table *t)
+int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 {
-	FILE			*fp;
-	u8				buf[8];
+	u8 buf[8];
 	memset(&buf, 0, sizeof(buf));
-	u32 offset;
-	spc_header		*h =& s->header;
-	spc_id666_text	*it = &s->tag_text;
-	spc_id666_bin	*ib = &s->tag_binary;
-	
+	spc_header *h = &s->header;
+	spc_id666_text *it = &s->tag_text;
+	spc_id666_bin *ib = &s->tag_binary;
+
 	spc_idx6_header	idx6h;
 	memset(&idx6h, 0, sizeof(idx6h));
-	spc_idx6_sub_header *idx6sh;
 
 	int i=0, j=0, k=0, l=0, m=0, d=0, y=0;
 
-	fp = fopen(filename, "rb");
+	FILE* fp = fopen(filename, "rb");
 	if(fp == NULL){
 		// invalid
 		printf("*** spc_load() : couldn't load file %s\n", filename);
@@ -64,32 +61,33 @@ int spc_load(char *filename, spc_struct *s, spc_idx6_table *t)
 
 	// read header
 	fread(h, 1, 37, fp);
-	if(strncmp(h->header, "SNES-SPC700 Sound File Data", 27) != 0){
+	if(strncmp( (const char*)(h->header), "SNES-SPC700 Sound File Data", 27) != 0){
 		// not an SPC!
 		printf("*** spc_load() : invalid header\n");
 		return SPC_LOAD_INVALID;
 	}
-	
+
 	//printf("version minor %d\n", h->version_minor);
- 
+
 	// read cpu registers
 	fread(&s->cpu_regs, 1, 9, fp);
-	
+
 	fread(it, 1, 210, fp);
-	if(h->id3_tag_present){
+	if (h->id3_tag_present)
+	{
 		//printf("id666 tag here\n");
 
 		// start by assuming it's binary
 		s->tag_format = SPC_TAG_PREFER_BINARY;
 
-		i = IsNumeric(&it->song_length_secs,3);
-		j = IsNumeric(&it->fade_length_ms,5);
-		k = IsDate(&it->date_dumped[0],11);
+		i = IsNumeric( (const char*)(it->song_length_secs), 3);
+		j = IsNumeric( (const char*)(it->fade_length_ms), 5);
+		k = IsDate( (const char*)(it->date_dumped), 11);
 
 		if (!(i | j | k))
 		{
 			if (it->channel_disable == 1 && it->emulator == 0)
-				s->tag_format = SPC_TAG_BINARY;	
+				s->tag_format = SPC_TAG_BINARY;
 
 			if (ib->reserved[0] >= '0' && ib->reserved[0] <= '2')
 				s->tag_format = SPC_TAG_TEXT;
@@ -99,7 +97,7 @@ int spc_load(char *filename, spc_struct *s, spc_idx6_table *t)
 		}
 		else
 		{
-			if (i != -1 && j != -1)	//If no time or time is text
+			if (i != -1 && j != -1)
 			{
 				if (k > 0)
 					s->tag_format = SPC_TAG_TEXT;
@@ -112,9 +110,9 @@ int spc_load(char *filename, spc_struct *s, spc_idx6_table *t)
 						else
 							s->tag_format = SPC_TAG_TEXT;
 					}
-					if((it->fade_length_ms[4] == 0) && (isascii(it->song_artist[0]) && (it->song_artist[0] != 0)))
-						s->tag_format = SPC_TAG_TEXT;	//Conclusively text.
-					if((i == 3) || (j == 5))
+					if ((it->fade_length_ms[4] == 0) && (isascii(it->song_artist[0]) && (it->song_artist[0] != 0)))
+						s->tag_format = SPC_TAG_TEXT; //Conclusively text.
+					if ((i == 3) || (j == 5))
 						s->tag_format = SPC_TAG_TEXT;
 				}
 			}
@@ -129,14 +127,14 @@ int spc_load(char *filename, spc_struct *s, spc_idx6_table *t)
 
 		if(s->tag_format == SPC_TAG_TEXT){
 			//printf("tag format : text\n");
-			i = CountNumbers(&it->date_dumped[0],11);
-			j = CountNumbers(&it->date_dumped[i+1],11-i-1);
-			k = CountNumbers(&it->date_dumped[i+1+j+1],11-j-1);
+			i = CountNumbers( (const char*)(&it->date_dumped[0]), 11);
+			j = CountNumbers( (const char*)(&it->date_dumped[i+1]), 11-i-1);
+			k = CountNumbers( (const char*)(&it->date_dumped[i+1+j+1]), 11-j-1);
 
 			if((i==4 && j>0 && j<=2 && k>0 && k<=2) || (i>0 && i<=2 && j>0 && j<=2 && k==4))
 			{
 
-				if(i==4)	//YYYY.MM.DD format.
+				if(i==4) //YYYY.MM.DD format.
 				{
 					for(l=0,y=0;l<i;l++)
 					{
@@ -192,16 +190,16 @@ int spc_load(char *filename, spc_struct *s, spc_idx6_table *t)
 							(((y % 100) % 10) << 0);
 			}
 			else
-				s->date = 0;	//Impossible or zero.
-			
+				s->date = 0; //Impossible or zero.
+
 			// impossible, or zero
 			if(s->date > 0x99999999) s->date = 0;
 			//printf("date: %08x\n", s->date);
 
 			memcpy(buf, &it->song_length_secs, 3); buf[4] = 0;
-			s->song_length = atoi(buf)*64000;
+			s->song_length = atoi((const char*)buf)*64000;
 			memcpy(buf, &it->fade_length_ms, 5); buf[6] = 0;
-			s->fade_length = atoi(buf)*64;
+			s->fade_length = atoi((const char*)buf)*64;
 		}else{
 			// binary
 			//printf("tag format : binary\n");
@@ -239,7 +237,6 @@ int spc_load(char *filename, spc_struct *s, spc_idx6_table *t)
 			s->fade_length *= 64;
 		}
 		//printf("song title: %s\ngame title: %s\n", it->song_title, it->game_title);
-		
 	}
 
 	// read ram dumps
@@ -252,11 +249,10 @@ int spc_load(char *filename, spc_struct *s, spc_idx6_table *t)
 	fread(&idx6h.header, 1, 8, fp);
 	if(strncmp((const char*)&idx6h.header, "xid6", 4) == 0){
 		fread(&idx6h.data[0], 1, idx6h.size, fp);
-		
-		offset = 0;
+		u32 offset = 0;
 		while(offset<idx6h.size)
 		{
-			idx6sh = (spc_idx6_sub_header*)&idx6h.data[offset];
+			spc_idx6_sub_header* idx6sh = (spc_idx6_sub_header*)&idx6h.data[offset];
 			switch(idx6sh->ID)
 			{
 			case IDX6_SONGNAME:
@@ -312,13 +308,10 @@ int spc_load(char *filename, spc_struct *s, spc_idx6_table *t)
 				break;
 			}
 			offset += 4 + ((idx6sh->Type)?((idx6sh->Length+3)&(~3)):0);
-			
 		}
 
 	}
-	
 
 	fclose(fp);
 	return SPC_LOAD_SUCCESS;
-
 }
