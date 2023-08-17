@@ -1,5 +1,5 @@
 #pragma once
-#include "types.h"
+#include "types.hpp"
 
 int spc2_start();
 int spc2_finish(int *final_size, const char *filename, u16 num_spc);
