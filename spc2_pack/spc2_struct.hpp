@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.h"
+#include "types.hpp"
 
 // http://blog.kevtris.org/blogfiles/spc2_file_specification_v1.txt
 
