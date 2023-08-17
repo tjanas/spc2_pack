@@ -21,11 +21,11 @@
 #include <glob.h>
 #endif
 
-#include "types.h"
-#include "spc_struct.h"
-#include "spc_load.h"
-#include "spc2_struct.h"
-#include "spc2_write.h"
+#include "types.hpp"
+#include "spc_struct.hpp"
+#include "spc_load.hpp"
+#include "spc2_struct.hpp"
+#include "spc2_write.hpp"
 
 struct spc_file_info
 {
