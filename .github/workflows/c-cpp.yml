@@ -2,9 +2,9 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "test" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "test" ]
 
 jobs:
   build:
@@ -13,11 +13,5 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: configure
-      run: echo ./configure
     - name: make
       run: cd spc2_pack; make
-    - name: make check
-      run: echo make check
-    - name: make distcheck
-      run: echo make distcheck
