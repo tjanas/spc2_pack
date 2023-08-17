@@ -2,9 +2,9 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ "test" ]
+    branches: [ "master" "test" ]
   pull_request:
-    branches: [ "test" ]
+    branches: [ "master" "test" ]
 
 jobs:
   build_ubuntu_latest:
