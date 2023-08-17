@@ -30,7 +30,7 @@
 struct spc_file_info
 {
 	char filename[260];
-	uint32_t filelen;
+	unsigned int filelen;
 };
 
 #ifdef _WIN32
