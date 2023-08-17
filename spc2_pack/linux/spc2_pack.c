@@ -10,7 +10,6 @@
 #include <cstring>
 #include <fstream>
 #include <glob.h>
-#include <iostream>
 #include <map>
 #include <sstream>
 #include <string>
@@ -118,7 +117,7 @@ int main(int argc, char* argv[])
 
 	memset(&sp2filename, 0, sizeof(sp2filename));
 
-	printf("\n spc2_pack 0.5 (2023-08-17)\n-------------------------------------------\n");
+	printf("\n spc2_pack 0.5 (2023-08-15)\n-------------------------------------------\n");
 
 	printf(" Packs multiple Super Nintendo SPC sound\n");
 	printf(" files to a single SPC2 \n\n");
