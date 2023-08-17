@@ -3,9 +3,9 @@
 #include <cctype>
 #include <cstring>
 #include <type_traits>
-#include "types.h"
-#include "spc_struct.h"
-#include "spc_load.h"
+#include "types.hpp"
+#include "spc_struct.hpp"
+#include "spc_load.hpp"
 
 int IsNumeric(const char* str, u32 length)
 {
