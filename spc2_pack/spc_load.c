@@ -10,7 +10,7 @@
 int IsNumeric(const char* str, u32 length)
 {
 	u32 c = 0;
-	while (c<length && isdigit(str[c])) c++;
+	while (c<length && isdigit(str[c])) ++c;
 	if(c==length || str[c]==0)
 		return c;
 	else
@@ -20,14 +20,14 @@ int IsNumeric(const char* str, u32 length)
 int CountNumbers(const char* str, u32 length)
 {
 	u32 c = 0;
-	while (c<length && isdigit(str[c])) c++;
+	while (c<length && isdigit(str[c])) ++c;
 	return c;
 }
 
 int IsDate(const char* str, u32 length)
 {
 	u32 c = 0;
-	while (c<length && (isdigit(str[c]) || str[c]=='/' || str[c]=='-')) c++;
+	while (c<length && (isdigit(str[c]) || str[c]=='/' || str[c]=='-')) ++c;
 	if(c==length || str[c]==0)
 		return c;
 	else
@@ -48,8 +48,8 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 	int i=0, j=0, k=0, l=0, m=0, d=0, y=0;
 
 	FILE* fp = fopen(filename, "rb");
-	if(fp == NULL){
-		// invalid
+	if(fp == NULL)
+	{	// invalid
 		printf("*** spc_load() : couldn't load file %s\n", filename);
 		return SPC_LOAD_FILEERR;
 	}
@@ -60,17 +60,23 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 	memset(t, 0, sizeof(spc_idx6_table));
 
 	// read header
-	fread(h, 1, 37, fp);
-	if(strncmp( (const char*)(h->header), "SNES-SPC700 Sound File Data", 27) != 0){
-		// not an SPC!
+	if (fread(h, 1, 37, fp) != 37)
+	{	// fread error
+		printf("*** spc_load() : could not read header\n");
+		return SPC_LOAD_INVALID;
+	}
+	if(strncmp( (const char*)(h->header), "SNES-SPC700 Sound File Data", 27) != 0)
+	{	// not an SPC!
 		printf("*** spc_load() : invalid header\n");
 		return SPC_LOAD_INVALID;
 	}
 
-	//printf("version minor %d\n", h->version_minor);
-
 	// read cpu registers
-	fread(&s->cpu_regs, 1, 9, fp);
+	if (fread(&s->cpu_regs, 1, 9, fp) != 9)
+	{	// fread error
+		printf("*** spc_load() : could not read CPU registers\n");
+		return SPC_LOAD_INVALID;
+	}
 
 	fread(it, 1, 210, fp);
 	if (h->id3_tag_present)
@@ -309,7 +315,6 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 			}
 			offset += 4 + ((idx6sh->Type)?((idx6sh->Length+3)&(~3)):0);
 		}
-
 	}
 
 	fclose(fp);
