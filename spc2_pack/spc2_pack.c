@@ -5,6 +5,7 @@
 //
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <io.h>
 #include "types.h"
@@ -18,13 +19,29 @@ spc_idx6_table	idx6;
 spc2_header		sh;
 spc2_metadata	sm;
 
+struct spc_file_info
+{
+	char filename[260];
+	unsigned int filelen;
+};
+
+int spc_file_info_compare(const void* v0, const void* v1)
+{
+	return strcmp( ((struct spc_file_info*)v0)->filename, ((struct spc_file_info*)v1)->filename );
+}
+
 int main(int argc, char* argv[])
 {
 	struct _finddata_t spc_file;
 	intptr_t dir;
 
-	static char files[65535][260];
-	static u32 filelen[65535];
+    struct spc_file_info* files = (struct spc_file_info*) calloc(65535, sizeof(struct spc_file_info));
+	if (NULL == files)
+	{
+		printf("Error: calloc\n");
+		return -1;
+	}
+
 	char path[260];
 	char sp2filename[260];
 	u16 file_count = 0;
@@ -33,8 +50,6 @@ int main(int argc, char* argv[])
 	int final_size;
 	int i = 0, k = 0, l = 0;
 
-	memset(&files, 0, sizeof(files));
-	memset(&filelen, 0, sizeof(filelen));
 	memset(&sp2filename, 0, sizeof(sp2filename));
 
 	printf("\n spc2_pack 0.5 (2023-08-15)\n-------------------------------------------\n");
@@ -50,6 +65,7 @@ int main(int argc, char* argv[])
 		printf(" Try \"spc2_pack . output.sp2\" to compress everything\n");
 		printf(" in the current folder\n\n");
 		printf(" Also try dragging a directory on top of the program\n\n");
+        free(files);
 		return -1;
 	}
 	else if(argc < 3){
@@ -91,21 +107,26 @@ int main(int argc, char* argv[])
 	// use win32 directory API. not posix
 	if( (dir = _findfirst( path, &spc_file )) == -1L ) {
 		printf( "No *.spc files in current directory!\n" );
+        free(files);
 		return -1;
 	}else{
 		do{
-			strncpy((char*)&files[file_count], (char*)&spc_file.name, 256);
+			strncpy(files[file_count].filename, spc_file.name, 256);
 			prev_size += spc_file.size;
-			filelen[file_count] = spc_file.size;
+			files[file_count].filelen = spc_file.size;
 			file_count++;
 		} while( _findnext( dir, &spc_file ) == 0 );
 	}
 	_findclose(dir);
 
+    // sort files
+    qsort(files, file_count, sizeof(files[0]), spc_file_info_compare);
+
 	// compress everything
 	if(spc2_start())
 	{
 		printf("Couldn't allocate memory for SPC2 packing\n");
+        free(files);
 		return -1;
 	}
 	for(i = 0; i < file_count; i++){
@@ -142,6 +163,7 @@ int main(int argc, char* argv[])
 	if(++k<l)
 		goto StartLoop;
 
+    free(files);
 	return 0;
 }
 
