@@ -3,9 +3,9 @@
 #include <cctype>
 #include <cstring>
 #include <type_traits>
-#include "types.h"
-#include "spc_struct.h"
-#include "spc_load.h"
+#include "types.hpp"
+#include "spc_struct.hpp"
+#include "spc_load.hpp"
 
 int IsNumeric(const char* str, u32 length)
 {
@@ -36,6 +36,11 @@ int IsDate(const char* str, u32 length)
 
 int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 {
+	if (NULL == s)
+		return SPC_LOAD_UNDEFINED;
+	if (NULL == t)
+		return SPC_LOAD_UNDEFINED;
+
 	u8 buf[8];
 	memset(&buf, 0, sizeof(buf));
 	spc_header *h = &s->header;
@@ -53,9 +58,7 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 		printf("*** spc_load() : couldn't load file %s\n", filename);
 		return SPC_LOAD_FILEERR;
 	}
-	//printf("*** spc_load() : opened %s\n", filename);
 
-	if(s == NULL) return SPC_LOAD_UNDEFINED;
 	memset(s, 0, sizeof(spc_struct));
 	memset(t, 0, sizeof(spc_idx6_table));
 
@@ -63,11 +66,13 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 	if (fread(h, 1, 37, fp) != 37)
 	{	// fread error
 		printf("*** spc_load() : could not read header\n");
+		fclose(fp);
 		return SPC_LOAD_INVALID;
 	}
 	if(strncmp( (const char*)(h->header), "SNES-SPC700 Sound File Data", 27) != 0)
 	{	// not an SPC!
 		printf("*** spc_load() : invalid header\n");
+		fclose(fp);
 		return SPC_LOAD_INVALID;
 	}
 
@@ -75,14 +80,18 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 	if (fread(&s->cpu_regs, 1, 9, fp) != 9)
 	{	// fread error
 		printf("*** spc_load() : could not read CPU registers\n");
+		fclose(fp);
 		return SPC_LOAD_INVALID;
 	}
 
-	fread(it, 1, 210, fp);
+	if (fread(it, 1, 210, fp) != 210)
+	{	// fread error
+		printf("*** spc_load() : could not read 210 bytes starting at offset 0x2E\n");
+		fclose(fp);
+		return SPC_LOAD_INVALID;
+	}
 	if (h->id3_tag_present)
 	{
-		//printf("id666 tag here\n");
-
 		// start by assuming it's binary
 		s->tag_format = SPC_TAG_PREFER_BINARY;
 
@@ -246,15 +255,36 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 	}
 
 	// read ram dumps
-	fread(&s->ram_dumps.ram, 1, 65536, fp);
-	fread(&s->ram_dumps.dsp_regs, 1, 128, fp);
-	fread(&s->ram_dumps.unused, 1, 64, fp);
-	fread(&s->ram_dumps.extra_ram, 1, 64, fp);
+	if (fread(&s->ram_dumps.ram, 1, 65536, fp) != 65536)
+	{	// fread error
+		printf("*** spc_load() : could not read 64KB RAM bytes\n");
+		fclose(fp);
+		return SPC_LOAD_INVALID;
+	}
+	if (fread(&s->ram_dumps.dsp_regs, 1, 128, fp) != 128)
+	{	// fread error
+		printf("*** spc_load() : could not read DSP Registers\n");
+		fclose(fp);
+		return SPC_LOAD_INVALID;
+	}
+	if (fread(&s->ram_dumps.unused, 1, 64, fp) != 64)
+	{	// fread error
+		printf("*** spc_load() : could not read 64 bytes at offset 0x10180\n");
+		fclose(fp);
+		return SPC_LOAD_INVALID;
+	}
+	if (fread(&s->ram_dumps.extra_ram, 1, 64, fp) != 64)
+	{	// fread error
+		printf("*** spc_load() : could not read Extra RAM bytes\n");
+		fclose(fp);
+		return SPC_LOAD_INVALID;
+	}
 
 	// Read extended ID666 info
-	fread(&idx6h.header, 1, 8, fp);
-	if(strncmp((const char*)&idx6h.header, "xid6", 4) == 0){
-		fread(&idx6h.data[0], 1, idx6h.size, fp);
+	if ( (fread(&idx6h.header, 1, 8, fp) == 8) &&
+	     (strncmp((const char*)&idx6h.header, "xid6", 4) == 0) &&
+	     (fread(&idx6h.data[0], 1, idx6h.size, fp) == idx6h.size) )
+	{
 		u32 offset = 0;
 		while(offset<idx6h.size)
 		{

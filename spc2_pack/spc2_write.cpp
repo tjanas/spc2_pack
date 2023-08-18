@@ -1,11 +1,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include "types.h"
-#include "spc_struct.h"
-#include "spc2_struct.h"
-#include "spc2_write.h"
-#include "sha1.h"
+#include "types.hpp"
+#include "spc_struct.hpp"
+#include "spc2_struct.hpp"
+#include "spc2_write.hpp"
+#include "sha1.hpp"
 
 FILE *fp = NULL;
 void *heap = NULL;
