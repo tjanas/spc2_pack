@@ -1,5 +1,5 @@
 #pragma once
-#include "types.h"
+#include "types.hpp"
 
 // http://vspcplay.raphnet.net/spc_file_format.txt
 

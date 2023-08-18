@@ -3,14 +3,14 @@
 #include <cctype>
 #include <cstring>
 #include <type_traits>
-#include "types.h"
-#include "spc_struct.h"
-#include "spc_load.h"
+#include "types.hpp"
+#include "spc_struct.hpp"
+#include "spc_load.hpp"
 
 int IsNumeric(const char* str, u32 length)
 {
 	u32 c = 0;
-	while (c<length && isdigit(str[c])) c++;
+	while (c<length && isdigit(str[c])) ++c;
 	if(c==length || str[c]==0)
 		return c;
 	else
@@ -20,14 +20,14 @@ int IsNumeric(const char* str, u32 length)
 int CountNumbers(const char* str, u32 length)
 {
 	u32 c = 0;
-	while (c<length && isdigit(str[c])) c++;
+	while (c<length && isdigit(str[c])) ++c;
 	return c;
 }
 
 int IsDate(const char* str, u32 length)
 {
 	u32 c = 0;
-	while (c<length && (isdigit(str[c]) || str[c]=='/' || str[c]=='-')) c++;
+	while (c<length && (isdigit(str[c]) || str[c]=='/' || str[c]=='-')) ++c;
 	if(c==length || str[c]==0)
 		return c;
 	else
@@ -36,6 +36,11 @@ int IsDate(const char* str, u32 length)
 
 int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 {
+	if (NULL == s)
+		return SPC_LOAD_UNDEFINED;
+	if (NULL == t)
+		return SPC_LOAD_UNDEFINED;
+
 	u8 buf[8];
 	memset(&buf, 0, sizeof(buf));
 	spc_header *h = &s->header;
@@ -48,35 +53,45 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 	int i=0, j=0, k=0, l=0, m=0, d=0, y=0;
 
 	FILE* fp = fopen(filename, "rb");
-	if(fp == NULL){
-		// invalid
-		printf("*** spc_load() : couldn't load file %s\n", filename);
+	if(fp == NULL)
+	{	// invalid
+		fprintf(stderr, "*** ERROR spc_load(): couldn't open \"%s\"\n", filename);
 		return SPC_LOAD_FILEERR;
 	}
-	//printf("*** spc_load() : opened %s\n", filename);
 
-	if(s == NULL) return SPC_LOAD_UNDEFINED;
 	memset(s, 0, sizeof(spc_struct));
 	memset(t, 0, sizeof(spc_idx6_table));
 
 	// read header
-	fread(h, 1, 37, fp);
-	if(strncmp( (const char*)(h->header), "SNES-SPC700 Sound File Data", 27) != 0){
-		// not an SPC!
-		printf("*** spc_load() : invalid header\n");
+	if (fread(h, 1, 37, fp) != 37)
+	{	// fread error
+		fprintf(stderr, "*** ERROR spc_load(): could not read header; filename: \"%s\"\n", filename);
+		fclose(fp);
+		return SPC_LOAD_INVALID;
+	}
+	if(strncmp( (const char*)(h->header), "SNES-SPC700 Sound File Data", 27) != 0)
+	{	// not an SPC!
+		fprintf(stderr, "*** ERROR spc_load(): invalid header; filename: \"%s\"\n", filename);
+		fclose(fp);
 		return SPC_LOAD_INVALID;
 	}
 
-	//printf("version minor %d\n", h->version_minor);
-
 	// read cpu registers
-	fread(&s->cpu_regs, 1, 9, fp);
+	if (fread(&s->cpu_regs, 1, 9, fp) != 9)
+	{	// fread error
+		fprintf(stderr, "*** ERROR spc_load(): could not read CPU registers; filename: \"%s\"\n", filename);
+		fclose(fp);
+		return SPC_LOAD_INVALID;
+	}
 
-	fread(it, 1, 210, fp);
+	if (fread(it, 1, 210, fp) != 210)
+	{	// fread error
+		fprintf(stderr, "*** ERROR spc_load(): could not read 210 bytes starting at offset 0x2E; filename: \"%s\"\n", filename);
+		fclose(fp);
+		return SPC_LOAD_INVALID;
+	}
 	if (h->id3_tag_present)
 	{
-		//printf("id666 tag here\n");
-
 		// start by assuming it's binary
 		s->tag_format = SPC_TAG_PREFER_BINARY;
 
@@ -136,17 +151,17 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 
 				if(i==4) //YYYY.MM.DD format.
 				{
-					for(l=0,y=0;l<i;l++)
+					for(l=0,y=0;l<i;++l)
 					{
 						y*=10;
 						y+=(it->date_dumped[l]-48);
 					}
-					for(l=(i+1),m=0;l<(i+1+j);l++)
+					for(l=(i+1),m=0;l<(i+1+j);++l)
 					{
 						m*=10;
 						m+=(it->date_dumped[l]-48);
 					}
-					for(l=(i+1+j+1),d=0;l<(i+1+j+1+k);l++)
+					for(l=(i+1+j+1),d=0;l<(i+1+j+1+k);++l)
 					{
 						d*=10;
 						d+=(it->date_dumped[l]-48);
@@ -154,17 +169,17 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 				}
 				else
 				{
-					for(l=0,m=0;l<i;l++)
+					for(l=0,m=0;l<i;++l)
 					{
 						m*=10;
 						m+=(it->date_dumped[l]-48);
 					}
-					for(l=(i+1),d=0;l<(i+1+j);l++)
+					for(l=(i+1),d=0;l<(i+1+j);++l)
 					{
 						d*=10;
 						d+=(it->date_dumped[l]-48);
 					}
-					for(l=(i+1+j+1),y=0;l<(i+1+j+1+k);l++)
+					for(l=(i+1+j+1),y=0;l<(i+1+j+1+k);++l)
 					{
 						y*=10;
 						y+=(it->date_dumped[l]-48);
@@ -240,17 +255,43 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 	}
 
 	// read ram dumps
-	fread(&s->ram_dumps.ram, 1, 65536, fp);
-	fread(&s->ram_dumps.dsp_regs, 1, 128, fp);
-	fread(&s->ram_dumps.unused, 1, 64, fp);
-	fread(&s->ram_dumps.extra_ram, 1, 64, fp);
+	if (fread(&s->ram_dumps.ram, 1, 65536, fp) != 65536)
+	{	// fread error
+		fprintf(stderr, "*** ERROR spc_load(): could not read 64KB RAM bytes; filename: \"%s\"\n", filename);
+		fclose(fp);
+		return SPC_LOAD_INVALID;
+	}
+	if (fread(&s->ram_dumps.dsp_regs, 1, 128, fp) != 128)
+	{	// fread error
+		fprintf(stderr, "*** ERROR spc_load(): could not read DSP Registers; filename: \"%s\"\n", filename);
+		fclose(fp);
+		return SPC_LOAD_INVALID;
+	}
+	if (fread(&s->ram_dumps.unused, 1, 64, fp) != 64)
+	{	// fread error
+		fprintf(stderr, "*** ERROR spc_load(): could not read 64 bytes at offset 0x10180; filename: \"%s\"\n", filename);
+		fclose(fp);
+		return SPC_LOAD_INVALID;
+	}
+	if (fread(&s->ram_dumps.extra_ram, 1, 64, fp) != 64)
+	{	// fread error
+		fprintf(stderr, "*** ERROR spc_load(): could not read Extra RAM bytes; filename: \"%s\"\n", filename);
+		fclose(fp);
+		return SPC_LOAD_INVALID;
+	}
 
 	// Read extended ID666 info
-	fread(&idx6h.header, 1, 8, fp);
-	if(strncmp((const char*)&idx6h.header, "xid6", 4) == 0){
-		fread(&idx6h.data[0], 1, idx6h.size, fp);
+	if ( (fread(&idx6h.header, 1, 8, fp) == 8) &&
+	     (strncmp((const char*)&idx6h.header, "xid6", 4) == 0) )
+	{
+		std::size_t bytes_read = fread(&idx6h.data[0], 1, idx6h.size, fp);
+		if (bytes_read != idx6h.size)
+		{
+			fprintf(stderr, "*** WARN spc_load(): xid6 header chunk size is %u but only read %zu bytes; filename: \"%s\"\n", idx6h.size, bytes_read, filename);
+		}
+
 		u32 offset = 0;
-		while(offset<idx6h.size)
+		while ( (offset < idx6h.size) && (offset < bytes_read) )
 		{
 			spc_idx6_sub_header* idx6sh = (spc_idx6_sub_header*)&idx6h.data[offset];
 			switch(idx6sh->ID)
@@ -306,10 +347,12 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 			case IDX6_AMPVAL:
 				memcpy(&t->amp_val, ((idx6sh->Type)?idx6sh->data:(u8*)&idx6sh->Length), ((idx6sh->Type)?idx6sh->Length:2));
 				break;
+			default:
+				fprintf(stderr, "*** WARN spc_load(): unknown/malformed xid6 tag ID (0x%02x); filename: \"%s\"\n", idx6sh->ID, filename);
+				break;
 			}
 			offset += 4 + ((idx6sh->Type)?((idx6sh->Length+3)&(~3)):0);
 		}
-
 	}
 
 	fclose(fp);

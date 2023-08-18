@@ -2,22 +2,38 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - master
+      - test
   pull_request:
-    branches: [ "master" ]
+    branches:
+      - master
+      - test
 
 jobs:
-  build:
+  build_ubuntu_latest:
 
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
-    - name: configure
-      run: echo ./configure
     - name: make
-      run: cd spc2_pack; make
-    - name: make check
-      run: echo make check
-    - name: make distcheck
-      run: echo make distcheck
+      run: cd spc2_pack; g++ --version; make
+
+  build_windows_latest:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: make
+      run: cd spc2_pack; g++ --version; make
+
+  build_macos_latest:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: make
+      run: cd spc2_pack; g++ --version; make

@@ -1,7 +1,7 @@
 //
-// spc2_pack 0.51
+// spc2_pack 0.52
 // marshallh, CaitSith2, tjanas
-// 2023-08-17
+// 2023-08-18
 //
 
 #include <algorithm>
@@ -21,11 +21,11 @@
 #include <glob.h>
 #endif
 
-#include "types.h"
-#include "spc_struct.h"
-#include "spc_load.h"
-#include "spc2_struct.h"
-#include "spc2_write.h"
+#include "types.hpp"
+#include "spc_struct.hpp"
+#include "spc_load.hpp"
+#include "spc2_struct.hpp"
+#include "spc2_write.hpp"
 
 struct spc_file_info
 {
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
 
 	memset(&sp2filename, 0, sizeof(sp2filename));
 
-	printf("\n spc2_pack 0.51 (2023-08-17)\n-------------------------------------------\n");
+	printf("\n spc2_pack 0.52 (2023-08-18)\n-------------------------------------------\n");
 
 	printf(" Packs multiple Super Nintendo SPC sound\n");
 	printf(" files to a single SPC2 \n\n");
@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}else{
 		do{
-			strncpy(files[file_count].filename, spc_file.name, 256);
+			strncpy(files[file_count].filename, spc_file.name, 259);
 			prev_size += spc_file.size;
 			files[file_count].filelen = spc_file.size;
 			++file_count;
