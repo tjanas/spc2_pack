@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}else{
 		do{
-			strncpy(files[file_count].filename, spc_file.name, 256);
+			strncpy(files[file_count].filename, spc_file.name, 259);
 			prev_size += spc_file.size;
 			files[file_count].filelen = spc_file.size;
 			++file_count;
