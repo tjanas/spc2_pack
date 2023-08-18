@@ -287,7 +287,7 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 		std::size_t bytes_read = fread(&idx6h.data[0], 1, idx6h.size, fp);
 		if (bytes_read != idx6h.size)
 		{
-			fprintf(stderr, "*** WARN spc_load(): xid6 header chunk size is %u but only read %lu bytes; filename: \"%s\"\n", idx6h.size, bytes_read, filename);
+			fprintf(stderr, "*** WARN spc_load(): xid6 header chunk size is %u but only read %zu bytes; filename: \"%s\"\n", idx6h.size, bytes_read, filename);
 		}
 
 		u32 offset = 0;
