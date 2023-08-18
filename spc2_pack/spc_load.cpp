@@ -55,7 +55,7 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 	FILE* fp = fopen(filename, "rb");
 	if(fp == NULL)
 	{	// invalid
-		fprintf(stderr, "*** ERROR spc_load(): couldn't load file \"%s\"\n", filename);
+		fprintf(stderr, "*** ERROR spc_load(): couldn't open \"%s\"\n", filename);
 		return SPC_LOAD_FILEERR;
 	}
 
@@ -65,13 +65,13 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 	// read header
 	if (fread(h, 1, 37, fp) != 37)
 	{	// fread error
-		fprintf(stderr, "*** ERROR spc_load(): could not read header\n");
+		fprintf(stderr, "*** ERROR spc_load(): could not read header; filename: \"%s\"\n", filename);
 		fclose(fp);
 		return SPC_LOAD_INVALID;
 	}
 	if(strncmp( (const char*)(h->header), "SNES-SPC700 Sound File Data", 27) != 0)
 	{	// not an SPC!
-		fprintf(stderr, "*** ERROR spc_load(): invalid header\n");
+		fprintf(stderr, "*** ERROR spc_load(): invalid header; filename: \"%s\"\n", filename);
 		fclose(fp);
 		return SPC_LOAD_INVALID;
 	}
@@ -79,14 +79,14 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 	// read cpu registers
 	if (fread(&s->cpu_regs, 1, 9, fp) != 9)
 	{	// fread error
-		fprintf(stderr, "*** ERROR spc_load(): could not read CPU registers\n");
+		fprintf(stderr, "*** ERROR spc_load(): could not read CPU registers; filename: \"%s\"\n", filename);
 		fclose(fp);
 		return SPC_LOAD_INVALID;
 	}
 
 	if (fread(it, 1, 210, fp) != 210)
 	{	// fread error
-		fprintf(stderr, "*** ERROR spc_load(): could not read 210 bytes starting at offset 0x2E\n");
+		fprintf(stderr, "*** ERROR spc_load(): could not read 210 bytes starting at offset 0x2E; filename: \"%s\"\n", filename);
 		fclose(fp);
 		return SPC_LOAD_INVALID;
 	}
@@ -257,25 +257,25 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 	// read ram dumps
 	if (fread(&s->ram_dumps.ram, 1, 65536, fp) != 65536)
 	{	// fread error
-		fprintf(stderr, "*** ERROR spc_load(): could not read 64KB RAM bytes\n");
+		fprintf(stderr, "*** ERROR spc_load(): could not read 64KB RAM bytes; filename: \"%s\"\n", filename);
 		fclose(fp);
 		return SPC_LOAD_INVALID;
 	}
 	if (fread(&s->ram_dumps.dsp_regs, 1, 128, fp) != 128)
 	{	// fread error
-		fprintf(stderr, "*** ERROR spc_load(): could not read DSP Registers\n");
+		fprintf(stderr, "*** ERROR spc_load(): could not read DSP Registers; filename: \"%s\"\n", filename);
 		fclose(fp);
 		return SPC_LOAD_INVALID;
 	}
 	if (fread(&s->ram_dumps.unused, 1, 64, fp) != 64)
 	{	// fread error
-		fprintf(stderr, "*** ERROR spc_load(): could not read 64 bytes at offset 0x10180\n");
+		fprintf(stderr, "*** ERROR spc_load(): could not read 64 bytes at offset 0x10180; filename: \"%s\"\n", filename);
 		fclose(fp);
 		return SPC_LOAD_INVALID;
 	}
 	if (fread(&s->ram_dumps.extra_ram, 1, 64, fp) != 64)
 	{	// fread error
-		fprintf(stderr, "*** ERROR spc_load(): could not read Extra RAM bytes\n");
+		fprintf(stderr, "*** ERROR spc_load(): could not read Extra RAM bytes; filename: \"%s\"\n", filename);
 		fclose(fp);
 		return SPC_LOAD_INVALID;
 	}
@@ -287,7 +287,7 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 		std::size_t bytes_read = fread(&idx6h.data[0], 1, idx6h.size, fp);
 		if (bytes_read != idx6h.size)
 		{
-			fprintf(stderr, "*** WARN spc_load(): xid6 header chunk size is %u but only read %lu bytes; filename=\"%s\"\n", idx6h.size, bytes_read, filename);
+			fprintf(stderr, "*** WARN spc_load(): xid6 header chunk size is %u but only read %lu bytes; filename: \"%s\"\n", idx6h.size, bytes_read, filename);
 		}
 
 		u32 offset = 0;
@@ -348,7 +348,7 @@ int spc_load(const char* filename, spc_struct *s, spc_idx6_table *t)
 				memcpy(&t->amp_val, ((idx6sh->Type)?idx6sh->data:(u8*)&idx6sh->Length), ((idx6sh->Type)?idx6sh->Length:2));
 				break;
 			default:
-				fprintf(stderr, "*** WARN spc_load(): unknown/malformed xid6 tag ID (0x%02x); filename=\"%s\"\n", idx6sh->ID, filename);
+				fprintf(stderr, "*** WARN spc_load(): unknown/malformed xid6 tag ID (0x%02x); filename: \"%s\"\n", idx6sh->ID, filename);
 				break;
 			}
 			offset += 4 + ((idx6sh->Type)?((idx6sh->Length+3)&(~3)):0);
