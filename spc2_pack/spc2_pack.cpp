@@ -1,7 +1,7 @@
 //
-// spc2_pack 0.51
+// spc2_pack 0.52
 // marshallh, CaitSith2, tjanas
-// 2023-08-17
+// 2023-08-18
 //
 
 #include <algorithm>
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
 
 	memset(&sp2filename, 0, sizeof(sp2filename));
 
-	printf("\n spc2_pack 0.51 (2023-08-17)\n-------------------------------------------\n");
+	printf("\n spc2_pack 0.52 (2023-08-18)\n-------------------------------------------\n");
 
 	printf(" Packs multiple Super Nintendo SPC sound\n");
 	printf(" files to a single SPC2 \n\n");
