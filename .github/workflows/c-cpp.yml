@@ -33,6 +33,7 @@ jobs:
       with:
         name: spc2_pack
         path: ${{ github.workspace }}/spc2_pack/*.exe
+        compression-level: 9 # maximum compression
 
   build_macos_latest:
 
