@@ -3,6 +3,7 @@ ifeq ($(OS),Windows_NT)
 	CXXFLAGS = -O3 -Wall -Wextra -std=c++14 -pedantic -static -static-libgcc -static-libstdc++
 else
 	CXXFLAGS = -O3 -Wall -Wextra -std=c++14 -pedantic
+endif
 objects = spc2_pack.o spc2_write.o spc_load.o sha1.o
 
 all: spc2_pack
