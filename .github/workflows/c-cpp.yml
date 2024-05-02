@@ -28,6 +28,11 @@ jobs:
     - uses: actions/checkout@v4
     - name: make
       run: cd spc2_pack; g++ --version; make
+    - name: upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: spc2_pack
+        path: ${{ github.workspace }}/spc2_pack/*.exe
 
   build_macos_latest:
 
